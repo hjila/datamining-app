@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ChevronDown, ChevronUp, BookOpen, Zap, Brain, Moon, Sun, X, ArrowRight } from 'lucide-react';
 
 const DataMiningStudyGuide = () => {
   const [activeSection, setActiveSection] = useState('overview');
-  const [expandedAlgo, setExpandedAlgo] = useState(null);
-  const [detailedAlgo, setDetailedAlgo] = useState(null);
-  const [showFlashcard, setShowFlashcard] = useState(false);
+  const [expandedAlgo, setExpandedAlgo] = useState<string | null>(null);
+  const [detailedAlgo, setDetailedAlgo] = useState<string | null>(null);
   const [currentCard, setCurrentCard] = useState(0);
   const [flippedCard, setFlippedCard] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -374,7 +373,7 @@ const DataMiningStudyGuide = () => {
     "Lexicographic order: ensures unique itemset representation"
   ];
 
-  const toggleAlgo = (key) => {
+  const toggleAlgo = (key: string) => {
     setExpandedAlgo(expandedAlgo === key ? null : key);
   };
 
@@ -448,7 +447,7 @@ const DataMiningStudyGuide = () => {
                 {/* Close Button */}
                 <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-slate-700">
                   <h1 className={`text-3xl font-bold ${darkMode ? 'text-cyan-300' : 'text-indigo-900'}`}>
-                    {algorithms[detailedAlgo].name}
+                    {(algorithms[detailedAlgo as keyof typeof algorithms] as any)?.name}
                   </h1>
                   <button
                     onClick={() => setDetailedAlgo(null)}
@@ -462,15 +461,19 @@ const DataMiningStudyGuide = () => {
 
                 {/* Content */}
                 <div className="p-8 space-y-8">
+                  {detailedAlgo && (() => {
+                    const algo = algorithms[detailedAlgo as keyof typeof algorithms] as any;
+                    return (
+                      <>
                   {/* Type and Purpose */}
                   <div className={`p-4 rounded-lg border-l-4 ${
                     darkMode ? 'bg-cyan-900 bg-opacity-30 border-cyan-500' : 'bg-cyan-50 border-cyan-500'
                   }`}>
                     <p className={`text-sm font-semibold uppercase tracking-wider ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
-                      {algorithms[detailedAlgo].type}
+                      {algo?.type}
                     </p>
                     <p className={`mt-2 text-lg ${darkMode ? 'text-slate-300' : 'text-gray-700'}`}>
-                      {algorithms[detailedAlgo].purpose}
+                      {algo?.purpose}
                     </p>
                   </div>
 
@@ -480,7 +483,7 @@ const DataMiningStudyGuide = () => {
                       📚 Key Points
                     </h2>
                     <div className="grid md:grid-cols-2 gap-3">
-                      {algorithms[detailedAlgo].keyPoints.map((point, idx) => (
+                      {algo?.keyPoints?.map((point: string, idx: number) => (
                         <div key={idx} className={`p-3 rounded-lg border-l-4 ${
                           darkMode ? 'bg-blue-900 bg-opacity-30 border-blue-500' : 'bg-blue-50 border-blue-500'
                         }`}>
@@ -491,13 +494,13 @@ const DataMiningStudyGuide = () => {
                   </div>
 
                   {/* Steps */}
-                  {algorithms[detailedAlgo].steps && (
+                  {algo?.steps && (
                     <div>
                       <h2 className={`text-2xl font-bold mb-4 ${darkMode ? 'text-green-300' : 'text-green-900'}`}>
                         ⚙️ Algorithm Steps
                       </h2>
                       <div className="space-y-3">
-                        {algorithms[detailedAlgo].steps.map((step, idx) => (
+                        {(algo?.steps || []).map((step: string, idx: number) => (
                           <div key={idx} className="flex gap-4">
                             <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold ${
                               darkMode ? 'bg-green-700 text-green-200' : 'bg-green-200 text-green-800'
@@ -512,13 +515,13 @@ const DataMiningStudyGuide = () => {
                   )}
 
                   {/* Exercises */}
-                  {algorithms[detailedAlgo].exercises && (
+                  {algo?.exercises && (
                     <div>
                       <h2 className={`text-2xl font-bold mb-4 ${darkMode ? 'text-orange-300' : 'text-orange-900'}`}>
                         ✏️ Practice Exercises
                       </h2>
                       <div className="space-y-4">
-                        {algorithms[detailedAlgo].exercises.map((exercise, idx) => (
+                        {(algo?.exercises || []).map((exercise: any, idx: number) => (
                           <div key={idx} className={`p-4 rounded-lg border-l-4 ${
                             darkMode ? 'bg-orange-900 bg-opacity-30 border-orange-500' : 'bg-orange-50 border-orange-500'
                           }`}>
@@ -547,23 +550,23 @@ const DataMiningStudyGuide = () => {
                   )}
 
                   {/* Example */}
-                  {algorithms[detailedAlgo].example && (
+                  {algo?.example && (
                     <div className={`p-4 rounded-lg border-l-4 font-mono text-sm ${
                       darkMode ? 'bg-violet-900 bg-opacity-30 border-violet-500 text-violet-200' : 'bg-violet-50 border-violet-500 text-violet-900'
                     }`}>
                       <strong className={`block mb-2 ${darkMode ? 'text-violet-300' : 'text-violet-900'}`}>📋 Example:</strong>
-                      <p className="break-words">{algorithms[detailedAlgo].example}</p>
+                      <p className="break-words">{algo?.example}</p>
                     </div>
                   )}
 
                   {/* Common Mistakes */}
-                  {algorithms[detailedAlgo].commonMistakes && (
+                  {algo?.commonMistakes && (
                     <div>
                       <h2 className={`text-2xl font-bold mb-4 ${darkMode ? 'text-red-300' : 'text-red-900'}`}>
                         ⚠️ Common Mistakes to Avoid
                       </h2>
                       <div className="space-y-3">
-                        {algorithms[detailedAlgo].commonMistakes.map((mistake, idx) => (
+                        {(algo?.commonMistakes || []).map((mistake: string, idx: number) => (
                           <div key={idx} className={`p-3 rounded-lg border-l-4 flex gap-3 ${
                             darkMode ? 'bg-red-900 bg-opacity-30 border-red-500' : 'bg-red-50 border-red-500'
                           }`}>
@@ -576,13 +579,13 @@ const DataMiningStudyGuide = () => {
                   )}
 
                   {/* Study Checklist */}
-                  {algorithms[detailedAlgo].studyChecklist && (
+                  {algo?.studyChecklist && (
                     <div>
                       <h2 className={`text-2xl font-bold mb-4 ${darkMode ? 'text-blue-300' : 'text-blue-900'}`}>
                         ✅ Study Checklist
                       </h2>
                       <div className="space-y-2">
-                        {algorithms[detailedAlgo].studyChecklist.map((item, idx) => (
+                        {(algo?.studyChecklist || []).map((item: string, idx: number) => (
                           <label key={idx} className="flex items-start gap-3 cursor-pointer p-2 hover:rounded hover:bg-opacity-20 hover:bg-blue-500 transition">
                             <input
                               type="checkbox"
@@ -595,6 +598,9 @@ const DataMiningStudyGuide = () => {
                       </div>
                     </div>
                   )}
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* Close Footer */}
@@ -757,7 +763,7 @@ const DataMiningStudyGuide = () => {
                       </ul>
                     </div>
 
-                    {algo.steps && (
+                    {(algo as any).steps && (
                       <div className={`p-4 rounded-lg border-l-4 ${
                         darkMode ? 'bg-green-900 bg-opacity-30 border-green-500' : 'bg-green-50 border-green-500'
                       }`}>
@@ -765,7 +771,7 @@ const DataMiningStudyGuide = () => {
                           <span>⚙️</span> Algorithm Steps
                         </h4>
                         <ol className="space-y-2">
-                          {algo.steps.map((step, idx) => (
+                          {((algo as any).steps || []).map((step: string, idx: number) => (
                             <li key={idx} className="flex gap-3">
                               <span className={`font-bold px-2 py-1 rounded text-sm ${darkMode ? 'bg-green-700 text-green-200' : 'bg-green-200 text-green-800'}`}>{idx + 1}</span>
                               <span className={`pt-1 ${darkMode ? 'text-slate-300' : 'text-gray-700'}`}>{step}</span>
@@ -775,13 +781,13 @@ const DataMiningStudyGuide = () => {
                       </div>
                     )}
 
-                    {algo.properties && (
+                    {(algo as any).properties && (
                       <div>
                         <h4 className={`font-bold mb-3 flex items-center gap-2 ${darkMode ? 'text-indigo-300' : 'text-indigo-900'}`}>
                           <span>🔗</span> CHARM Properties
                         </h4>
                         <div className="space-y-2">
-                          {algo.properties.map((prop, idx) => (
+                          {((algo as any).properties || []).map((prop: string, idx: number) => (
                             <div key={idx} className={`p-3 rounded-lg border-l-4 ${
                               darkMode ? 'bg-indigo-900 bg-opacity-30 border-indigo-500' : 'bg-indigo-50 border-indigo-500'
                             }`}>
@@ -793,7 +799,7 @@ const DataMiningStudyGuide = () => {
                       </div>
                     )}
 
-                    {algo.optimization && (
+                    {(algo as any).optimization && (
                       <div className={`p-4 rounded-lg border-l-4 ${
                         darkMode ? 'bg-orange-900 bg-opacity-30 border-orange-500' : 'bg-orange-50 border-orange-500'
                       }`}>
@@ -801,7 +807,7 @@ const DataMiningStudyGuide = () => {
                           <span>⚡</span> Optimizations
                         </h4>
                         <ul className="space-y-2">
-                          {algo.optimization.map((opt, idx) => (
+                          {((algo as any).optimization || []).map((opt: string, idx: number) => (
                             <li key={idx} className={`flex gap-3 ${darkMode ? 'text-slate-300' : 'text-gray-700'}`}>
                               <span className={darkMode ? 'text-orange-400' : 'text-orange-600'}>→</span>
                               {opt}
@@ -811,23 +817,23 @@ const DataMiningStudyGuide = () => {
                       </div>
                     )}
 
-                    {algo.advantage && (
+                    {(algo as any).advantage && (
                       <div className={`p-4 rounded-lg border-l-4 ${
                         darkMode ? 'bg-emerald-900 bg-opacity-30 border-emerald-500' : 'bg-emerald-50 border-emerald-500'
                       }`}>
                         <strong className={`flex items-center gap-2 ${darkMode ? 'text-emerald-300' : 'text-emerald-900'}`}>
                           <span>🎯</span> Advantage
                         </strong>
-                        <p className={`mt-1 ${darkMode ? 'text-slate-300' : 'text-gray-700'}`}>{algo.advantage}</p>
+                        <p className={`mt-1 ${darkMode ? 'text-slate-300' : 'text-gray-700'}`}>{(algo as any).advantage}</p>
                       </div>
                     )}
 
-                    {algo.example && (
+                    {(algo as any).example && (
                       <div className={`p-4 rounded-lg border-l-4 font-mono text-sm ${
                         darkMode ? 'bg-violet-900 bg-opacity-30 border-violet-500 text-violet-200' : 'bg-violet-50 border-violet-500 text-violet-900'
                       }`}>
                         <strong className={`block mb-2 ${darkMode ? 'text-violet-300' : 'text-violet-900'}`}>📋 Example:</strong>
-                        <p className="break-words">{algo.example}</p>
+                        <p className="break-words">{(algo as any).example}</p>
                       </div>
                     )}
                   </div>
