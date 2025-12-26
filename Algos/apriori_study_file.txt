@@ -1,0 +1,314 @@
+================================================================================
+APRIORI ALGORITHM - Complete Study Guide
+================================================================================
+
+ALGORITHM TYPE: Breadth-First Search (BFS) - Level-wise approach
+COMPLEXITY: M × N operations per level (M=candidates, N=transactions)
+
+================================================================================
+1. DEFINITION & PURPOSE
+================================================================================
+
+Apriori is a breadth-first search algorithm for mining frequent itemsets from 
+transactional databases. It uses candidate generation and pruning based on the 
+anti-monotone property.
+
+KEY PRINCIPLE - Anti-Monotone Property:
+If an itemset is infrequent, ALL of its supersets are also infrequent.
+This allows aggressive pruning of the search space.
+
+================================================================================
+2. ALGORITHM STEPS
+================================================================================
+
+Step 1: SCAN DATABASE - Count support of all 1-itemsets
+   → Generate F₁ (frequent 1-itemsets that meet min_sup)
+
+Step 2: GENERATE CANDIDATES
+   → Create Cₖ from Fₖ₋₁ using candidate generation methods:
+     a) Fₖ₋₁ × F₁ (join with single items)
+     b) Fₖ₋₁ × Fₖ₋₁ (self-join)
+
+Step 3: PRUNE CANDIDATES
+   → Remove any candidate in Cₖ where ANY (k-1)-subset is not in Fₖ₋₁
+   → This uses the anti-monotone property
+
+Step 4: COUNT SUPPORT
+   → Scan database to count support of remaining candidates in Cₖ
+
+Step 5: GENERATE FREQUENT ITEMSETS
+   → Keep only candidates with support ≥ min_sup → these become Fₖ
+
+Step 6: REPEAT
+   → Repeat steps 2-5 until no more candidates can be generated
+
+Step 7: OUTPUT
+   → Return F = F₁ ∪ F₂ ∪ F₃ ∪ ... ∪ Fₖ
+
+================================================================================
+3. KEY FEATURES & OPTIMIZATIONS
+================================================================================
+
+LEXICOGRAPHIC ORDERING:
+- Imposes a unique ordering on items (e.g., alphabetical)
+- Purpose: Avoid redundant candidate generation
+- Example: {A,B} and {B,A} are the same - only generate once
+- Makes candidate generation NON-REDUNDANT
+- Reduces search space
+
+HASH TREE OPTIMIZATION:
+- Makes support counting MORE EFFICIENT
+- Reduces number of comparisons between transactions and candidates
+- Instead of M×N comparisons, can reduce to approximately N operations
+- Stores candidates in a tree structure for faster lookup
+
+CANDIDATE GENERATION METHODS:
+1. Fₖ₋₁ × F₁ method (less efficient, generates more candidates)
+2. Fₖ₋₁ × Fₖ₋₁ method (more efficient with lexicographic order)
+3. NO METHOD completely eliminates unnecessary candidates
+
+PRUNING STRATEGY:
+- Before counting support, remove candidates with infrequent subsets
+- Dramatically reduces database scans needed
+- Based on: If {A,B,C,D} is frequent, then {A,B,C}, {A,B,D}, etc. must ALL be frequent
+
+================================================================================
+4. COMPLETE EXAMPLE (from Exam 2020-2021)
+================================================================================
+
+Given Database:
+TID   | Itemsets
+------|-------------
+T01   | I1, I2, I3
+T02   | I1, I2
+T03   | I1, I4, I5
+T04   | I5, I4
+T05   | I5, I3
+T06   | I1, I4, I5
+
+min_sup = 2
+
+SOLUTION STEP-BY-STEP:
+
+Level 1 (1-itemsets):
+--------------------
+C₁ = {I1:4, I2:2, I3:2, I4:3, I5:4}
+All have support ≥ 2
+F₁ = {I1:4, I2:2, I3:2, I4:3, I5:4}
+
+Level 2 (2-itemsets):
+--------------------
+Generate candidates by joining F₁ × F₁:
+C₂ = {I1I2:?, I1I3:?, I1I4:?, I1I5:?, I2I3:?, I2I4:?, I2I5:?, I3I4:?, I3I5:?, I4I5:?}
+
+Scan database to count support:
+C₂ = {I1I2:2, I1I3:1, I1I4:2, I1I5:2, I2I3:1, I2I4:0, I2I5:0, I3I4:0, I3I5:1, I4I5:3}
+
+Keep only support ≥ 2:
+F₂ = {I1I2:2, I1I4:2, I1I5:2, I4I5:3}
+
+Level 3 (3-itemsets):
+--------------------
+Generate candidates from F₂:
+Possible: I1I2I4, I1I2I5, I1I4I5
+
+Check pruning condition for I1I2I4:
+- Subsets: {I1I2}, {I1I4}, {I2I4}
+- {I2I4} is NOT in F₂ → PRUNE I1I2I4
+
+Check pruning condition for I1I2I5:
+- Subsets: {I1I2}, {I1I5}, {I2I5}
+- {I2I5} is NOT in F₂ → PRUNE I1I2I5
+
+Check pruning condition for I1I4I5:
+- Subsets: {I1I4}, {I1I5}, {I4I5}
+- ALL are in F₂ → KEEP I1I4I5
+
+C₃ = {I1I4I5}
+
+Scan database:
+I1I4I5 appears in T03, T06 → support = 2
+
+F₃ = {I1I4I5:2}
+
+Level 4 (4-itemsets):
+--------------------
+Cannot generate any 4-itemsets from F₃
+C₄ = {} (empty)
+
+STOP
+
+FINAL RESULT:
+F = F₁ ∪ F₂ ∪ F₃
+F = {I1:4, I2:2, I3:2, I4:3, I5:4, I1I2:2, I1I4:2, I1I5:2, I4I5:3, I1I4I5:2}
+
+Total: 10 frequent itemsets
+
+================================================================================
+5. EXAM PRACTICE PROBLEMS
+================================================================================
+
+PROBLEM 1 (QCM 2022 - Question 4):
+-----------------------------------
+Q: L'algorithme Apriori, est un algorithme:
+   a) De recherche en largeur (BFS)
+   b) De recherche en profondeur (DFS)
+
+ANSWER: a) De recherche en largeur (BFS)
+EXPLANATION: Apriori explores level-by-level, all k-itemsets before (k+1)-itemsets
+
+PROBLEM 2 (QCM 2022 - Question 5):
+-----------------------------------
+Q: Dans Apriori, l'utilisation d'un arbre de hachage a pour objectif:
+   a) Rendre l'opération de comptage de support plus performante
+   b) Diminue la quantité de mémoire utilisée
+   c) Diminue le nombre de comparaisons
+
+ANSWER: a) ET c) sont corrects
+EXPLANATION: Hash tree makes support counting efficient AND reduces comparisons
+
+PROBLEM 3 (QCM 2022 - Question 6):
+-----------------------------------
+Q: Quelle méthode élimine totalement les candidats non nécessaires?
+
+ANSWER: Aucune réponse
+EXPLANATION: NO candidate generation method completely eliminates ALL unnecessary 
+candidates. Both Fₖ₋₁ × F₁ and Fₖ₋₁ × Fₖ₋₁ can generate some unnecessary candidates.
+
+PROBLEM 4 (QCM 2021 - Question 5):
+-----------------------------------
+Q: Dans l'algorithme Apriori, l'élagage consiste à:
+   a) Supprimer les itemsets qui n'ont pas un sous-ensemble fréquent
+   b) Supprimer les itemsets dont tous les sous-ensembles sont fréquents
+   c) Supprimer les itemsets non fréquents
+
+ANSWER: a) ET c) sont corrects
+EXPLANATION: 
+- Pruning removes itemsets without all subsets being frequent (anti-monotone)
+- Also removes itemsets below min_sup threshold
+
+PROBLEM 5 (QCM 2021 - Question 6):
+-----------------------------------
+Q: Imposer un ordre lexicographique sur les items, a pour effet:
+   a) La méthode devient Complète
+   b) La méthode devient non redondante
+   c) La réduction de l'espace de recherche
+
+ANSWER: b) ET c) sont corrects
+EXPLANATION:
+- Makes generation NON-REDUNDANT (no duplicate itemsets like {A,B} and {B,A})
+- REDUCES search space
+- Does NOT make it complete (still can have unnecessary candidates)
+
+PROBLEM 6 (QCM 2021 - Question 7):
+-----------------------------------
+Q: Avec approche Brute-Force pour comptage, combien d'opérations?
+   (N transactions, M candidats)
+
+ANSWER: M × N opérations transactionnelles à chaque niveau
+EXPLANATION: Must check each of M candidates against each of N transactions
+
+PROBLEM 7 (QCM 2021 - Question 8):
+-----------------------------------
+Q: En utilisant une approche qui énumère les éléments contenus dans chaque 
+   transaction et les utilise pour mettre à jour le support, combien d'opérations?
+
+ANSWER: N opérations transactionnelles à chaque niveau
+EXPLANATION: Scan each transaction once, update relevant candidates
+
+================================================================================
+6. COMPLEXITY ANALYSIS
+================================================================================
+
+TIME COMPLEXITY:
+- Number of database scans: k (where k = max itemset size)
+- Per level: O(M × N) with brute force
+- Per level: O(N) with hash tree optimization
+- Candidate generation: O(|Fₖ₋₁|²) for self-join
+
+SPACE COMPLEXITY:
+- Must store all candidates in memory
+- Can be very large: O(2^n) in worst case (n = number of items)
+
+ADVANTAGES:
++ Simple and easy to understand
++ Uses effective pruning strategy
++ Works well with small to medium datasets
+
+DISADVANTAGES:
+- Multiple database scans (one per level)
+- Generates many candidates
+- Can be slow for large datasets
+- Memory intensive for many items
+
+================================================================================
+7. KEY FORMULAS & CALCULATIONS
+================================================================================
+
+SUPPORT:
+support(X) = |transactions containing X| / |total transactions|
+
+NUMBER OF POSSIBLE ITEMSETS:
+With k items: 2^k itemsets total (including empty set)
+              2^k - 1 (excluding empty set)
+
+NUMBER OF k-ITEMSETS:
+C(n,k) = n! / (k! × (n-k)!)
+Where n = total number of items
+
+CANDIDATE GENERATION (Fₖ₋₁ × Fₖ₋₁):
+Join two (k-1)-itemsets if they share the first (k-2) items
+Example: {A,B,C} and {A,B,D} → generate {A,B,C,D}
+
+================================================================================
+8. COMMON EXAM MISTAKES TO AVOID
+================================================================================
+
+❌ MISTAKE 1: Forgetting to prune before counting support
+✓ CORRECT: Always check if all (k-1)-subsets are frequent before counting
+
+❌ MISTAKE 2: Counting {A,B} and {B,A} as different itemsets
+✓ CORRECT: Use lexicographic order - only one representation
+
+❌ MISTAKE 3: Thinking a method eliminates ALL unnecessary candidates
+✓ CORRECT: No method is perfect, some unnecessary candidates always generated
+
+❌ MISTAKE 4: Not scanning database for EACH level
+✓ CORRECT: Apriori requires one database scan per level k
+
+❌ MISTAKE 5: Confusing BFS (Apriori) with DFS (Eclat, FP-Growth)
+✓ CORRECT: Apriori = BFS (breadth-first, level-wise)
+
+================================================================================
+9. COMPARISON WITH OTHER ALGORITHMS
+================================================================================
+
+APRIORI vs FP-GROWTH:
+- Apriori: Generates candidates, multiple DB scans, BFS
+- FP-Growth: No candidates, only 2 DB scans, tree-based
+
+APRIORI vs ECLAT:
+- Apriori: Horizontal format (TID → items), BFS
+- Eclat: Vertical format (Item → TIDs), DFS, tidset intersection
+
+APRIORI vs GSP:
+- Apriori: For itemsets (unordered)
+- GSP: For sequences (ordered), similar approach
+
+================================================================================
+10. STUDY CHECKLIST
+================================================================================
+
+□ Can you explain the anti-monotone property?
+□ Can you execute Apriori step-by-step on a small database?
+□ Do you understand candidate generation (Fₖ₋₁ × Fₖ₋₁)?
+□ Can you prune candidates correctly?
+□ Do you know why lexicographic ordering is used?
+□ Can you explain hash tree optimization?
+□ Can you calculate: 2^k itemsets from k items?
+□ Do you know: Apriori = BFS, not DFS?
+□ Can you identify which statements about Apriori are true/false?
+
+================================================================================
+END OF APRIORI ALGORITHM STUDY GUIDE
+================================================================================

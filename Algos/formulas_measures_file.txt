@@ -1,0 +1,423 @@
+================================================================================
+DATA MINING - FORMULAS AND MEASURES - Complete Reference
+================================================================================
+
+================================================================================
+1. SUPPORT
+================================================================================
+
+DEFINITION:
+Frequency of an itemset in the database
+
+FORMULA (Absolute):
+support(X) = |{t ∈ T | X ⊆ t}|
+Where T = set of all transactions
+
+FORMULA (Relative):
+support(X) = |{t ∈ T | X ⊆ t}| / |T|
+
+INTERPRETATION:
+- Absolute: Number of transactions containing X
+- Relative: Percentage/proportion of transactions containing X
+
+EXAMPLE:
+Database with 10 transactions
+Itemset {A,B} appears in 3 transactions
+→ Absolute support = 3
+→ Relative support = 3/10 = 0.3 = 30%
+
+IN EXAMS:
+Usually use absolute support (count of transactions)
+
+================================================================================
+2. CONFIDENCE
+================================================================================
+
+DEFINITION:
+Strength of association rule X → Y
+Probability that Y appears given X appears
+
+FORMULA:
+confidence(X → Y) = support(X ∪ Y) / support(X)
+                  = P(Y|X)
+
+ALTERNATIVE NOTATION:
+conf(X → Y) = sup(XY) / sup(X)
+
+RANGE:
+0 ≤ confidence ≤ 1 (or 0% to 100%)
+
+INTERPRETATION:
+- High confidence: Strong rule, Y often appears when X appears
+- confidence = 1: Y ALWAYS appears when X appears
+- confidence = 0: Y NEVER appears when X appears
+
+EXAMPLE (from Exam 2020-2021):
+Given:
+- support(I4) = 3
+- support(I1,I4) = 2
+
+confidence(I4 → I1) = support(I1,I4) / support(I4)
+                    = 2 / 3
+                    = 0.667 = 66.7%
+
+IMPORTANT PROPERTY:
+Confidence is NOT symmetric:
+confidence(X → Y) ≠ confidence(Y → X)
+
+EXAMPLE:
+conf(I4 → I1) = 2/3 = 0.667
+conf(I1 → I4) = 2/4 = 0.5
+Different values!
+
+================================================================================
+3. LIFT (INTEREST)
+================================================================================
+
+DEFINITION:
+Measures how much more likely Y is when X is present
+Detects independence between X and Y
+
+FORMULA:
+lift(X → Y) = support(X ∪ Y) / (support(X) × support(Y))
+            = confidence(X → Y) / support(Y)
+            = P(X,Y) / (P(X) × P(Y))
+
+INTERPRETATION:
+- lift = 1: X and Y are INDEPENDENT (no correlation)
+- lift > 1: X and Y are POSITIVELY correlated
+- lift < 1: X and Y are NEGATIVELY correlated (substitutes)
+
+WHY IT MATTERS:
+Confidence alone can be misleading!
+A rule with high confidence might still be useless if lift ≈ 1
+
+EXAMPLE (from Exam 2021-2022):
+Database: 5 transactions
+A appears in 5 transactions: support(A) = 5/5 = 1
+B appears in 3 transactions: support(B) = 3/5 = 0.6
+AB appears in 3 transactions: support(AB) = 3/5 = 0.6
+
+confidence(A → B) = 0.6/1 = 0.6 = 60%
+
+lift(A → B) = 0.6 / (1 × 0.6) = 0.6 / 0.6 = 1
+
+Interpretation: lift = 1 means A and B are INDEPENDENT
+Even though confidence is 60%, the rule is MISLEADING
+Buying A doesn't increase likelihood of buying B
+
+RULE EVALUATION:
+✓ Strong rule: High confidence AND lift > 1
+✗ Misleading rule: High confidence BUT lift ≈ 1
+✗ Negative rule: lift < 1 (avoid this combination)
+
+================================================================================
+4. CONTINGENCY TABLE
+================================================================================
+
+DEFINITION:
+2×2 table showing co-occurrence of two variables
+
+STRUCTURE:
+For rule A → B:
+
+         B      ¬B    | Total
+    ----+------+------+-------
+     A  | n11  | n10  | n1.
+    ----+------+------+-------
+    ¬A  | n01  | n00  | n0.
+    ----+------+------+-------
+   Total| n.1  | n.0  |  n
+
+Where:
+- n11 = support(A,B) = transactions with both A and B
+- n10 = support(A,¬B) = transactions with A but not B
+- n01 = support(¬A,B) = transactions with B but not A
+- n00 = support(¬A,¬B) = transactions with neither
+- n1. = support(A) = total transactions with A
+- n.1 = support(B) = total transactions with B
+- n = total number of transactions
+
+EXAMPLE (from Exam 2020-2021):
+For rule I4 → I1 with 6 transactions:
+
+         I1    ¬I1   | Total
+    ----+-----+-----+-------
+     I4 |  2  |  1  |   3
+    ----+-----+-----+-------
+    ¬I4 |  2  |  1  |   3
+    ----+-----+-----+-------
+   Total|  4  |  2  |   6
+
+From this table:
+- support(I4,I1) = 2
+- support(I4) = 3
+- support(I1) = 4
+- confidence(I4 → I1) = 2/3 = 0.667
+- P(I1) = 4/6 = 0.667
+- Since P(I1|I4) = P(I1), they are INDEPENDENT
+
+TESTING INDEPENDENCE:
+A and B are independent if:
+confidence(A → B) = support(B)
+OR: P(B|A) = P(B)
+
+If confidence(A → B) > support(B): Positive correlation
+If confidence(A → B) < support(B): Negative correlation
+If confidence(A → B) = support(B): Independent
+
+================================================================================
+5. DERIVABLE ITEMSETS & BOUNDS
+================================================================================
+
+DEFINITION:
+An itemset is DERIVABLE if its support can be calculated EXACTLY from 
+supports of its subsets using bounds
+
+LOWER BOUND (LB):
+Minimum possible support for itemset X
+
+FORMULA (when |X\Y| is EVEN):
+support(X) ≥ Σ(-1)^|W| × support(W) for all W where Y ⊆ W ⊆ X
+
+UPPER BOUND (UB):
+Maximum possible support for itemset X
+
+FORMULA (when |X\Y| is ODD):
+support(X) ≤ Σ(-1)^|W| × support(W) for all W where Y ⊆ W ⊆ X
+
+DERIVABLE TEST:
+If LB = UB, then support is exactly known → itemset is DERIVABLE
+
+EXAMPLE (from Exam 2021-2022):
+Test if ABC is derivable
+
+Step 1: Calculate Lower Bound (choose Y=A, |X\Y|=2, even)
+W = {A, AB, AC}
+LB(ABC) ≥ (-1)¹×sup(A) + (-1)²×sup(AB) + (-1)²×sup(AC)
+        ≥ -sup(A) + sup(AB) + sup(AC)
+        ≥ -5 + 3 + 4
+        ≥ 2
+
+Step 2: Calculate Upper Bound (choose Y=BC, |X\Y|=1, odd)
+W = {BC}
+UB(ABC) ≤ (-1)⁰×sup(BC)
+        ≤ sup(BC)
+        ≤ 2
+
+Step 3: Compare
+LB = 2, UB = 2
+LB = UB → support(ABC) = 2 exactly
+ABC is DERIVABLE ✓
+
+ANOTHER EXAMPLE (from Exam 2024):
+For itemset {a,b,c,d}:
+
+Lower Bound (Y=ab, |X\Y|=2, even):
+W = {ab, abc, abd}
+sup(abcd) ≥ -sup(ab) + sup(abc) + sup(abd)
+          ≥ -5 + 4 + 5 = 4
+
+Upper Bound (Y=abc, |X\Y|=1, odd):
+W = {abc}
+sup(abcd) ≤ sup(abc) ≤ 4
+
+LB = UB = 4 → abcd is DERIVABLE with support 4
+
+================================================================================
+6. CLOSURE OPERATOR
+================================================================================
+
+DEFINITION:
+The closure of an itemset X is the largest set of items that appear in ALL 
+transactions containing X
+
+FORMULA:
+c(X) = i(t(X))
+
+Where:
+- t(X) = tidset of X = set of transaction IDs containing X
+- i(T) = items common to ALL transactions in set T
+
+PROPERTIES:
+1. EXTENSIVE: X ⊆ c(X)
+2. MONOTONE: If X ⊆ Y, then c(X) ⊆ c(Y)
+3. IDEMPOTENT: c(c(X)) = c(X)
+
+CLOSED ITEMSET TEST:
+X is closed ⟺ c(X) = X
+
+EXAMPLE (from Exam 2020-2021):
+Test if {I1, I4, I5} is closed
+
+Step 1: Find t({I1, I4, I5})
+Which transactions contain ALL of I1, I4, I5?
+→ t({I1, I4, I5}) = {T03, T06}
+
+Step 2: Find i({T03, T06})
+Which items appear in BOTH T03 AND T06?
+T03 = {I1, I4, I5}
+T06 = {I1, I4, I5}
+→ i({T03, T06}) = {I1, I4, I5}
+
+Step 3: Compare
+c({I1, I4, I5}) = {I1, I4, I5}
+c(X) = X ✓
+{I1, I4, I5} IS CLOSED
+
+================================================================================
+7. COUNTING FORMULAS
+================================================================================
+
+NUMBER OF POSSIBLE ITEMSETS:
+From k items: 2^k itemsets (including empty set)
+              2^k - 1 (excluding empty set)
+
+EXAMPLE:
+3 items {A, B, C}
+→ 2³ = 8 itemsets: {}, {A}, {B}, {C}, {AB}, {AC}, {BC}, {ABC}
+
+NUMBER OF k-ITEMSETS:
+From n items, number of k-itemsets:
+C(n,k) = n! / (k! × (n-k)!)
+
+EXAMPLE:
+From 5 items, how many 3-itemsets?
+C(5,3) = 5! / (3! × 2!) = 120 / (6 × 2) = 10
+
+NUMBER OF ASSOCIATION RULES:
+From a k-itemset (k > 1):
+2^k - 2 rules
+
+EXPLANATION:
+- Each subset of k items can be antecedent
+- Remaining items are consequent
+- Exclude: empty antecedent, empty consequent
+
+EXAMPLE:
+From {A,B,C}:
+Rules: A→BC, B→AC, C→AB, AB→C, AC→B, BC→A
+Total: 2³ - 2 = 6 rules
+
+TOTAL RULES FROM DATABASE:
+Sum over all k-itemsets:
+Σ (number of k-itemsets) × (2^k - 2)
+
+================================================================================
+8. EXAM CALCULATION EXAMPLES
+================================================================================
+
+EXAMPLE 1: Confidence Calculation (Exam 2024)
+----------------------------------------------
+Database (by transaction ID):
+TID | Itemsets
+----|----------
+001 | a,d,e
+002 | a,b,c,e
+003 | a,b,d,e
+004 | a,c,d,e
+...
+
+Calculate: confidence(a,d ⇒ e)
+
+Step 1: Count support(a,d,e)
+Transactions containing ALL of a, d, e: 001, 003, 004, 009
+support(a,d,e) = 4
+
+Step 2: Count support(a,d)
+Transactions containing BOTH a and d: 001, 003, 004, 009
+support(a,d) = 4
+
+Step 3: Calculate confidence
+conf(a,d ⇒ e) = 4/4 = 1 = 100%
+
+EXAMPLE 2: Independence Test (Exam 2021-2022)
+----------------------------------------------
+For rule A → B:
+support(A) = 4/6
+support(B) = 6/6 = 1
+support(A,B) = 4/6
+
+confidence(A → B) = (4/6) / (4/6) = 1
+P(B) = 6/6 = 1
+
+Since confidence(A → B) = P(B) = 1
+→ A and B are INDEPENDENT
+→ Rule is MISLEADING (don't use it)
+
+EXAMPLE 3: Maximum Itemsets (Exam 2023)
+----------------------------------------
+Q: With 5 items, how many 3-itemsets maximum?
+
+Answer: C(5,3) = 5!/(3!×2!) = 10
+
+Q: How many total frequent itemsets possible?
+
+Answer: 2^5 - 1 = 31 (excluding empty set)
+
+EXAMPLE 4: Total Association Rules (Exam 2023)
+-----------------------------------------------
+Q: Maximum rules from database with 5 items?
+
+Calculate for each k:
+- 2-itemsets: C(5,2) = 10, each generates 2² - 2 = 2 rules → 20 rules
+- 3-itemsets: C(5,3) = 10, each generates 2³ - 2 = 6 rules → 60 rules
+- 4-itemsets: C(5,4) = 5, each generates 2⁴ - 2 = 14 rules → 70 rules
+- 5-itemsets: C(5,5) = 1, each generates 2⁵ - 2 = 30 rules → 30 rules
+
+Total: 20 + 60 + 70 + 30 = 180 rules
+
+================================================================================
+9. QUICK REFERENCE TABLE
+================================================================================
+
+Measure              | Formula                    | Range
+---------------------|----------------------------|--------
+Support              | |transactions with X| / |T|| [0,1]
+Confidence           | sup(XY) / sup(X)          | [0,1]
+Lift                 | sup(XY)/(sup(X)×sup(Y))   | [0,∞)
+Cosine               | sup(XY)/√(sup(X)×sup(Y))  | [0,1]
+Jaccard              | sup(XY)/(sup(X)+sup(Y)-sup(XY)) | [0,1]
+
+Independence Test:
+- conf(X→Y) = P(Y) → independent
+- conf(X→Y) > P(Y) → positive correlation
+- conf(X→Y) < P(Y) → negative correlation
+
+================================================================================
+10. COMMON MISTAKES TO AVOID
+================================================================================
+
+❌ MISTAKE 1: Using confidence alone without checking independence
+✓ CORRECT: Always calculate lift or check if conf(X→Y) = P(Y)
+
+❌ MISTAKE 2: Thinking confidence is symmetric
+✓ CORRECT: conf(X→Y) ≠ conf(Y→X) in general
+
+❌ MISTAKE 3: Confusing absolute and relative support
+✓ CORRECT: Check if exam asks for count or percentage
+
+❌ MISTAKE 4: Wrong bounds calculation (even/odd confusion)
+✓ CORRECT: Even |X\Y| → lower bound, Odd |X\Y| → upper bound
+
+❌ MISTAKE 5: Including empty set in itemset count
+✓ CORRECT: Usually count 2^k - 1 (excluding empty set)
+
+================================================================================
+11. STUDY CHECKLIST
+================================================================================
+
+□ Can you calculate support (absolute and relative)?
+□ Can you calculate confidence of a rule?
+□ Can you calculate lift and interpret it?
+□ Can you build a contingency table?
+□ Can you test for independence?
+□ Can you calculate lower and upper bounds?
+□ Can you test if an itemset is derivable?
+□ Can you apply closure operator c(X) = i(t(X))?
+□ Can you count: 2^k itemsets, C(n,k) k-itemsets, 2^k-2 rules?
+□ Do you know when a rule is misleading?
+
+================================================================================
+END OF FORMULAS AND MEASURES REFERENCE
+================================================================================

@@ -1,0 +1,432 @@
+================================================================================
+CHARM ALGORITHM - Complete Study Guide
+================================================================================
+
+ALGORITHM TYPE: Closed Itemset Mining using Vertical Data Format
+PURPOSE: Extract ONLY closed frequent itemsets (more compact representation)
+
+================================================================================
+1. DEFINITION & PURPOSE
+================================================================================
+
+CHARM (Closed Association Rule Mining using Hyper-structure) mines closed 
+frequent itemsets using vertical data format (tidsets) and exploits tidset 
+relationships to prune the search space efficiently.
+
+CLOSED ITEMSET DEFINITION:
+An itemset X is CLOSED if there exists NO superset X' ⊃ X with the same support.
+Formally: X is closed iff c(X) = X
+
+CLOSURE OPERATOR:
+c(X) = i(t(X))
+where:
+- t(X) = tidset of X (set of transaction IDs containing X)
+- i(T) = items common to ALL transactions in set T
+
+================================================================================
+2. WHY CLOSED ITEMSETS?
+================================================================================
+
+ADVANTAGES:
+- Much more compact than all frequent itemsets
+- Contains same information (can derive all frequent itemsets)
+- Reduces redundancy
+
+EXAMPLE:
+All frequent itemsets:     {A:100, B:100, AB:100, C:50, AC:50, BC:50, ABC:50}
+Closed itemsets only:      {AB:100, ABC:50}
+
+From closed itemsets, we can derive:
+- A has support 100 (from AB)
+- B has support 100 (from AB)
+- C has support 50 (from ABC)
+- etc.
+
+HIERARCHY:
+All Frequent Itemsets ⊇ Closed Itemsets ⊇ Maximal Itemsets
+
+================================================================================
+3. THE 4 CHARM PROPERTIES
+================================================================================
+
+Given two itemsets Xᵢ and Xⱼ with their tidsets t(Xᵢ) and t(Xⱼ):
+
+PROPERTY 1: If t(Xᵢ) = t(Xⱼ)
+   → Replace both Xᵢ and Xⱼ with XᵢXⱼ
+   → Same transactions contain both, so combine them
+   → Example: t({A}) = {1,2,3} = t({B}), then use {AB} instead
+
+PROPERTY 2: If t(Xᵢ) ⊂ t(Xⱼ)
+   → Replace Xᵢ with XᵢXⱼ (keep Xⱼ separate)
+   → Xᵢ is more specific (fewer transactions)
+   → Example: t({A}) = {1,2} ⊂ t({B}) = {1,2,3}
+
+PROPERTY 3: If t(Xᵢ) ⊃ t(Xⱼ)
+   → Replace Xⱼ with XᵢXⱼ (keep Xᵢ separate)
+   → Mirror of Property 2
+   → Example: t({A}) = {1,2,3} ⊃ t({B}) = {1,2}
+
+PROPERTY 4: If t(Xᵢ) ≠ t(Xⱼ) (different, not subset)
+   → Add both XᵢXⱼ to candidates
+   → Cannot combine, must explore both
+
+================================================================================
+4. KEY OPTIMIZATION: ORDERING BY SUPPORT
+================================================================================
+
+WHY ORDER BY INCREASING SUPPORT?
+
+Property 2 handles: t(Xᵢ) ⊂ t(Xⱼ)
+
+If we order by INCREASING support (smallest first):
+- Items with smaller tidsets come first
+- When we test t(Xᵢ) ⊂ t(Xⱼ), we know |t(Xᵢ)| ≤ |t(Xⱼ)|
+- We DON'T need to test the reverse: t(Xⱼ) ⊂ t(Xᵢ)
+- Saves computational time
+
+Without ordering:
+- Must test both t(Xᵢ) ⊂ t(Xⱼ) AND t(Xⱼ) ⊂ t(Xᵢ)
+
+With ordering by increasing support:
+- Only test t(Xᵢ) ⊂ t(Xⱼ) (guaranteed by ordering)
+
+================================================================================
+5. COMPLETE EXAMPLE (from Exam 2021-2022)
+================================================================================
+
+Given Database:
+TID   | Itemsets
+------|-------------
+T01   | A, B
+T02   | A, B, C
+T03   | A, B, C, D
+T04   | A, C, D
+T05   | A, C
+
+min_sup = 2
+
+SOLUTION STEP-BY-STEP:
+
+STEP 1: Convert to Vertical Format
+-----------------------------------
+A: {1, 2, 3, 4, 5} → support = 5
+B: {1, 2, 3}       → support = 3
+C: {2, 3, 4, 5}    → support = 4
+D: {3, 4}          → support = 2
+
+STEP 2: Order by INCREASING Support
+------------------------------------
+P = {(D:2), (B:3), (C:4), (A:5)}
+Sorted: D, B, C, A
+
+STEP 3: Process Using CHARM Properties
+---------------------------------------
+
+Start with D (support=2, tidset={3,4}):
+
+Process D with C:
+  t(D) = {3,4}
+  t(C) = {2,3,4,5}
+  t(D) ⊂ t(C) → Property 2
+  → Replace D with DC
+  → DC tidset = t(D) ∩ t(C) = {3,4}
+  
+  Continue with DC and A:
+  t(DC) = {3,4}
+  t(A) = {1,2,3,4,5}
+  t(DC) ⊂ t(A) → Property 2
+  → Replace DC with DCA
+  → DCA tidset = {3,4}
+  
+  DCA is closed with tidset {3,4}
+
+Process B (support=3, tidset={1,2,3}):
+
+Process B with A:
+  t(B) = {1,2,3}
+  t(A) = {1,2,3,4,5}
+  t(B) ⊂ t(A) → Property 2
+  → Replace B with BA
+  → BA tidset = {1,2,3}
+  
+  Continue BA with C:
+  t(BA) = {1,2,3}
+  t(C) = {2,3,4,5}
+  t(BA) ∩ t(C) = {2,3} → Property 4 (different)
+  → Generate BAC
+  → BAC tidset = {2,3}
+  
+  BA is closed with tidset {1,2,3}
+  BAC is closed with tidset {2,3}
+
+Process C with A:
+  t(C) = {2,3,4,5}
+  t(A) = {1,2,3,4,5}
+  t(C) ⊂ t(A) → Property 2
+  → Replace C with CA
+  → CA tidset = {2,3,4,5}
+  
+  CA is closed with tidset {2,3,4,5}
+
+Process A:
+  A is closed with tidset {1,2,3,4,5}
+
+CLOSED ITEMSETS FOUND:
+C = {DCA:2, BA:3, BAC:2, CA:4, A:5}
+
+Or written as:
+- ACD: {3,4} - support 2
+- AB:  {1,2,3} - support 3  
+- ABC: {2,3} - support 2
+- AC:  {2,3,4,5} - support 4
+- A:   {1,2,3,4,5} - support 5
+
+================================================================================
+6. TESTING IF AN ITEMSET IS CLOSED
+================================================================================
+
+METHOD 1: Using Closure Operator c(X) = i(t(X))
+
+Example: Is {I1, I4, I5} closed?
+
+Step 1: Find t({I1, I4, I5})
+  → Which transactions contain ALL of I1, I4, I5?
+  → Suppose t({I1, I4, I5}) = {T03, T06}
+
+Step 2: Find i({T03, T06})
+  → Which items appear in BOTH T03 AND T06?
+  → T03 = {I1, I4, I5}
+  → T06 = {I1, I4, I5}
+  → i({T03, T06}) = {I1, I4, I5}
+
+Step 3: Compare c(X) with X
+  → c({I1, I4, I5}) = {I1, I4, I5}
+  → c(X) = X ✓
+  → Therefore {I1, I4, I5} IS CLOSED
+
+METHOD 2: Check if any superset has same support
+
+{I1, I4, I5} is closed if NO superset has support = 2
+- Check all 4-itemsets containing {I1, I4, I5}
+- If any has support 2, then {I1, I4, I5} is NOT closed
+
+================================================================================
+7. EXAM PRACTICE PROBLEMS
+================================================================================
+
+PROBLEM 1 (QCM 2022 - Question 7):
+-----------------------------------
+Q: Soit deux itemsets Xᵢ et Xⱼ, si t(Xᵢ) ⊂ t(Xⱼ), alors:
+   a) c(Xᵢ) = c(Xⱼ)
+   b) c(Xⱼ) = c(Xᵢ ∪ Xⱼ)
+   c) c(Xᵢ) ≠ c(Xⱼ)
+
+ANSWER: c) c(Xᵢ) ≠ c(Xⱼ)
+EXPLANATION: If t(Xᵢ) ⊂ t(Xⱼ), they have different tidsets, so different 
+closures. Xᵢ is more specific (fewer transactions).
+
+PROBLEM 2 (QCM 2022 - Question 8):
+-----------------------------------
+Q: L'algorithme CHARM ordonne les Itemsets selon un ordre croissant du support, 
+   le but est:
+   a) Accélérer seulement le temps d'exécution
+   b) Éviter de tester à la fois si t(Xᵢ) ⊂ t(Xⱼ) et t(Xⱼ) ⊂ t(Xᵢ)
+   c) Aucune réponse
+
+ANSWER: b) Éviter de tester les deux directions
+EXPLANATION: With increasing support order, we know smaller support items come 
+first, so only need to test one direction (Property 2).
+
+PROBLEM 3 (Course Question):
+----------------------------
+Q: Dans l'algorithme CHARM, pourquoi on ordonne les Itemsets selon un ordre 
+   croissant du support?
+
+ANSWER: La propriété 2 de l'algorithme CHARM traite le cas où t(Xᵢ) ⊂ t(Xⱼ). 
+Imposer un ordre croissant du support évite de tester si t(Xⱼ) ⊂ t(Xᵢ), car 
+on sait que |t(Xᵢ)| ≤ |t(Xⱼ)|.
+
+PROBLEM 4 (QCM 2021 - Question 10):
+------------------------------------
+Q: Si Xᵢ et Xⱼ sont des itemsets, on a:
+   a) si Xᵢ ⊆ Xⱼ, alors c(Xⱼ) ⊆ c(Xᵢ)
+   b) c(c(c(Xᵢ))) = c(Xᵢ)
+   c) Si t(Xᵢ) ⊂ t(Xⱼ), alors c(Xⱼ) = c(Xᵢ ∪ Xⱼ)
+
+ANSWER: b) c(c(c(Xᵢ))) = c(Xᵢ)
+EXPLANATION: Closure operator is idempotent - applying it multiple times gives 
+same result as applying once.
+
+PROBLEM 5 (Exam 2020-2021 - Question 6):
+-----------------------------------------
+Q: Using closure operator, test if itemset {I1, I4, I5} is closed.
+
+Given:
+- t({I1, I4, I5}) = {T06}
+- T06 = {I1, I4, I5}
+
+SOLUTION:
+c({I1, I4, I5}) = i(t({I1, I4, I5}))
+                = i({T06})
+                = i({I1, I4, I5})
+                = {I1, I4, I5}
+
+Since c({I1, I4, I5}) = {I1, I4, I5}, the itemset IS CLOSED ✓
+
+================================================================================
+8. DERIVING ALL FREQUENT ITEMSETS FROM CLOSED ITEMSETS
+================================================================================
+
+EXAMPLE from Exam 2021-2022:
+
+Closed Itemsets:
+- ABC: 2
+- ACD: 2
+- AB: 3
+- AC: 4
+- A: 5
+
+DERIVE all 11 frequent itemsets:
+
+1-itemsets:
+- A: 5 (closed) ✓
+- B: 3 → from AB:3 (or max(AB:3, ABC:2))
+- C: 4 → from AC:4 (or max(AC:4, ABC:2, ACD:2))
+- D: 2 → from ACD:2
+
+2-itemsets:
+- AB: 3 (closed) ✓
+- AC: 4 (closed) ✓
+- AD: 2 → from ACD:2
+- BC: 2 → from ABC:2
+- CD: 2 → from ACD:2
+
+3-itemsets:
+- ABC: 2 (closed) ✓
+- ACD: 2 (closed) ✓
+
+TOTAL: 11 frequent itemsets derived from 5 closed itemsets
+
+================================================================================
+9. CLOSED vs MAXIMAL ITEMSETS
+================================================================================
+
+MAXIMAL ITEMSET:
+An itemset is MAXIMAL if it is frequent and has NO frequent superset.
+
+RELATIONSHIP:
+- All maximal itemsets are closed
+- NOT all closed itemsets are maximal
+
+EXAMPLE:
+Frequent itemsets: {A:5, B:3, AB:3, C:2, AC:2, ABC:2}
+
+Closed: {A:5, AB:3, ABC:2} (no superset with same support)
+Maximal: {ABC:2} (no frequent superset at all)
+
+All Frequent ⊇ Closed ⊇ Maximal
+
+From Exam 2021-2022:
+- Closed: {A:5, AB:3, AC:4, ABC:2, ACD:2}
+- Maximal: {ABC:2, ACD:2} (these have no frequent supersets)
+
+================================================================================
+10. COMPLEXITY ANALYSIS
+================================================================================
+
+TIME COMPLEXITY:
+- Better than Apriori (no candidate generation)
+- Uses vertical format (fast tidset intersection)
+- Properties allow aggressive pruning
+
+SPACE COMPLEXITY:
+- Stores tidsets (vertical format)
+- More memory than Apriori for tidsets
+- But generates fewer itemsets (only closed)
+
+ADVANTAGES:
++ Compact output (only closed itemsets)
++ No candidate generation
++ Fast tidset operations
++ Effective pruning with 4 properties
++ Ordering optimization reduces comparisons
+
+DISADVANTAGES:
+- More complex than Apriori
+- Requires storing tidsets
+- Must understand closure operator
+
+================================================================================
+11. VERTICAL vs HORIZONTAL DATA FORMAT
+================================================================================
+
+HORIZONTAL (used by Apriori):
+TID → Items
+T01 → {A, B, C}
+T02 → {A, B}
+
+VERTICAL (used by CHARM, Eclat):
+Item → TIDset
+A → {T01, T02}
+B → {T01, T02}
+C → {T01}
+
+ADVANTAGES OF VERTICAL:
+- Fast support counting: just |tidset|
+- Fast intersection: t(AB) = t(A) ∩ t(B)
+- No database scans needed after conversion
+
+================================================================================
+12. COMMON EXAM MISTAKES TO AVOID
+================================================================================
+
+❌ MISTAKE 1: Confusing closed with maximal itemsets
+✓ CORRECT: Closed = no superset with SAME support, Maximal = no FREQUENT superset
+
+❌ MISTAKE 2: Not ordering by increasing support in CHARM
+✓ CORRECT: Must order by increasing support to avoid double-checking tidsets
+
+❌ MISTAKE 3: Including item itself when applying i(t(X))
+✓ CORRECT: t(X) gives tidset, i(tidset) gives items common to those transactions
+
+❌ MISTAKE 4: Thinking Property 1 keeps both Xᵢ and Xⱼ
+✓ CORRECT: Property 1 REPLACES both with XᵢXⱼ (they're equivalent)
+
+❌ MISTAKE 5: Not using tidset intersection for combined itemsets
+✓ CORRECT: t(XY) = t(X) ∩ t(Y)
+
+================================================================================
+13. CLOSURE OPERATOR PROPERTIES
+================================================================================
+
+PROPERTIES:
+1. EXTENSIVE: X ⊆ c(X) (closure contains at least X)
+2. MONOTONE: If X ⊆ Y, then c(X) ⊆ c(Y)
+3. IDEMPOTENT: c(c(X)) = c(X) (applying twice = applying once)
+
+TEST FOR CLOSED:
+X is closed ⟺ c(X) = X
+
+EXAMPLE:
+If c({A, B}) = {A, B, C}, then:
+- {A, B} is NOT closed (c(X) ≠ X)
+- {A, B, C} might be closed (need to check if c({A,B,C}) = {A,B,C})
+
+================================================================================
+14. STUDY CHECKLIST
+================================================================================
+
+□ Can you define what a closed itemset is?
+□ Can you explain the closure operator c(X) = i(t(X))?
+□ Do you know all 4 CHARM properties?
+□ Can you explain why CHARM orders by increasing support?
+□ Can you test if an itemset is closed using c(X) = X?
+□ Can you execute CHARM on a small database?
+□ Do you understand vertical data format (tidsets)?
+□ Can you derive all frequent itemsets from closed ones?
+□ Can you distinguish closed from maximal itemsets?
+□ Do you know: c(c(c(X))) = c(X)?
+
+================================================================================
+END OF CHARM ALGORITHM STUDY GUIDE
+================================================================================
