@@ -40,17 +40,17 @@ const DataMiningStudyGuide = () => {
         {
           title: "Find Frequent Itemsets",
           description: "Database: {A,B,C}, {A,C}, {A,B,C,D}, {B,C}, {A,B,C}. min_sup=60%",
-          solution: "Transactions: 5. min_sup_count=3. F₁={A:4,B:3,C:5}. F₂={AC:4, BC:4, AB:3}. F₃={ABC:3}"
+          solution: "STEP 1: Count transactions = 5, min_sup_count = 5×0.6 = 3\n\nSTEP 2: Scan database for items:\n• A appears in: T1,T3,T4,T5 = 4 times (≥3) ✓\n• B appears in: T1,T3,T5 = 3 times (≥3) ✓\n• C appears in: T1,T2,T3,T4,T5 = 5 times (≥3) ✓\n• D appears in: T3 = 1 time (<3) ✗\nResult: F₁={A:4, B:3, C:5}\n\nSTEP 3: Generate C₂ candidates: {AB}, {AC}, {BC}\n\nSTEP 4: Scan database for pairs:\n• AB: T1,T3,T5 = 3 times (≥3) ✓\n• AC: T1,T3,T4,T5 = 4 times (≥3) ✓\n• BC: T1,T3,T4,T5 = 4 times (≥3) ✓\nResult: F₂={AB:3, AC:4, BC:4}\n\nSTEP 5: Generate C₃: {ABC}\n\nSTEP 6: Scan database:\n• ABC: T1,T3,T5 = 3 times (≥3) ✓\nResult: F₃={ABC:3}\n\nFINAL FREQUENT ITEMSETS: {A}, {B}, {C}, {AB}, {AC}, {BC}, {ABC}"
         },
         {
           title: "Candidate Pruning",
           description: "Given F₂={AB, AC, BC}, generate C₃ and prune using Apriori property",
-          solution: "C₃ candidate={ABC}. Check: all subsets {AB,AC,BC} ∈ F₂? YES → keep ABC"
+          solution: "STEP 1: Generate C₃ candidates by joining F₂:\nJoin AB + AC → ABC (share AB)\nJoin AB + BC → ABC (share B)\nJoin AC + BC → ABC (share C)\nResult: C₃={ABC}\n\nSTEP 2: Apply Apriori Pruning Property:\nFor ABC to be frequent, ALL 2-item subsets must be in F₂:\n• Check subset {AB}: YES, in F₂ ✓\n• Check subset {AC}: YES, in F₂ ✓\n• Check subset {BC}: YES, in F₂ ✓\n\nSTEP 3: Decision:\nAll subsets are frequent → KEEP ABC in C₃\nABC is a valid candidate for scanning\n\nSTEP 4: If any subset was missing from F₂:\nExample: If BC was NOT in F₂, then ABC would be pruned (not scanned)"
         },
         {
-          title: "Compare with FP-Growth",
-          description: "Apriori scans DB 4 times for this data. FP-Growth scans DB 2 times. Why?",
-          solution: "Apriori needs 1 scan per level (4 levels). FP-Growth: 1st scan counts, 2nd builds tree, then recursive mining on tree (no more DB scans)"
+          title: "Algorithm Complexity",
+          description: "Database with 1000 items, 100,000 transactions. Estimate Apriori passes needed.",
+          solution: "GIVEN:\n• n = 1000 items\n• m = 100,000 transactions\n\nSTEP 1: Count rare items (support < 1%):\nAssuming 30% of items are frequent\nF₁ candidates ≈ 300 items\n\nSTEP 2: Generate F₂ candidates:\n|C₂| = 300 × 299 / 2 ≈ 45,000 candidates\nAfter pruning, |F₂| ≈ 150 itemsets (avg)\n\nSTEP 3: Generate F₃ candidates:\n|C₃| = combinations of F₂ ≈ 11,000 candidates\nAfter pruning, |F₃| ≈ 50 itemsets\n\nSTEP 4: Continue until no more frequent itemsets\nEstimated levels k ≈ 5-6\n\nSTEP 5: Total database scans = k = 5-6 passes\nTotal cost ≈ 5 × 100,000 = 500,000 transaction scans\n\nCONCLUSION: For this data, FP-Growth would be significantly faster (only 2 scans)"
         }
       ],
       commonMistakes: [
@@ -95,12 +95,12 @@ const DataMiningStudyGuide = () => {
         {
           title: "Build FP-Tree",
           description: "Transactions: {A,B}, {A,C}, {A,B,C}, {A,B,D}, {C,D}. min_sup=2",
-          solution: "Order by frequency: A:4, B:3, C:3, D:2. Root→A(4)→B(3)→C(1), A→C(1), C→D(1)"
+          solution: "STEP 1: First scan - count item frequencies:\n• A: appears in T1,T2,T3,T4 = 4 times\n• B: appears in T1,T3 = 2 times\n• C: appears in T2,T3,T5 = 3 times\n• D: appears in T4,T5 = 2 times\nAll items ≥ min_sup(2), so all frequent\n\nSTEP 2: Sort by frequency (descending): A(4), C(3), B(2), D(2)\n\nSTEP 3: Second scan - build FP-tree:\nT1:{A,B} → Root→A:1→B:1\nT2:{A,C} → Root→A:2→C:1\nT3:{A,B,C} → Root→A:3→B:2→C:1 OR Root→A:3→C:2\nT4:{A,B,D} → Root→A:4→B:3→D:1\nT5:{C,D} → Root→C:3→D:1\n\nSTEP 4: Final structure:\nRoot\n├─ A:4\n│  ├─ C:2\n│  │  └─ B:1\n│  └─ B:2\n│     └─ D:1\n└─ C:1\n   └─ D:1"
         },
         {
-          title: "Extract Patterns",
-          description: "From the FP-tree above, mine patterns for item D",
-          solution: "D has paths: {C,A}, {C}. Conditional pattern base: {C:2, A:1}. Frequent: {CD:2}"
+          title: "Extract Conditional Pattern Base",
+          description: "From the FP-tree above, mine patterns for item D (min_sup=2)",
+          solution: "STEP 1: Start with item D (leaf item by frequency)\n\nSTEP 2: Find all paths ending with D:\n• Path 1: Root→A:4→B:2→D:1 → prefix {A:1,B:1}\n• Path 2: Root→C:1→D:1 → prefix {C:1}\n\nSTEP 3: Construct conditional pattern base for D:\nCPB(D) = {(A,B):1, (C):1}\nThis means: D co-occurs with {A,B} in 1 transaction, with {C} in 1 transaction\n\nSTEP 4: Count frequencies in CPB:\n• A: 1 time (< min_sup of 2)\n• B: 1 time (< min_sup of 2)\n• C: 1 time (< min_sup of 2)\n\nSTEP 5: Result:\nNo frequent patterns from CPB(D)\nOnly single itemset D is frequent\n\nFINAL: Frequent patterns with D: {D}"
         }
       ]
     },
@@ -128,12 +128,12 @@ const DataMiningStudyGuide = () => {
         {
           title: "Vertical Format Conversion",
           description: "Horizontal: T1:{A,B,C}, T2:{A,C}, T3:{B,C}. Convert to vertical",
-          solution: "A:{1,2}, B:{1,3}, C:{1,2,3}"
+          solution: "STEP 1: Create empty mapping for each item\n\nSTEP 2: Scan each transaction:\nT1:{A,B,C} → A:{1}, B:{1}, C:{1}\nT2:{A,C} → A:{1,2}, B:{1}, C:{1,2}\nT3:{B,C} → A:{1,2}, B:{1,3}, C:{1,2,3}\n\nSTEP 3: Final Vertical Format (Item → Tidset):\n• A: {1,2} (appears in T1,T2)\n• B: {1,3} (appears in T1,T3)\n• C: {1,2,3} (appears in T1,T2,T3)\n\nSupport values:\n• A: 2/3 = 66.7%\n• B: 2/3 = 66.7%\n• C: 3/3 = 100%"
         },
         {
-          title: "Compute Intersections",
-          description: "Find support of itemset {A,B} using tidsets",
-          solution: "{A} ∩ {B} = {1,2} ∩ {1,3} = {1}, support=1"
+          title: "Compute Tidset Intersections",
+          description: "Find support of itemset {A,B} using tidsets from above",
+          solution: "STEP 1: Recall tidsets:\n• t(A) = {1,2}\n• t(B) = {1,3}\n\nSTEP 2: Compute intersection:\nt(A,B) = t(A) ∩ t(B)\nt(A,B) = {1,2} ∩ {1,3}\nt(A,B) = {1}\n\nSTEP 3: Calculate support:\nsupport({A,B}) = |t(A,B)| / total_transactions\nsupport({A,B}) = 1/3 = 33.3%\n\nSTEP 4: Interpretation:\n{A,B} appears together ONLY in transaction T1\nThis is the power of vertical format - no DB scan needed!\n\nSTEP 5: If min_sup = 50%:\n33.3% < 50% → {A,B} is NOT frequent, PRUNE it"
         }
       ]
     },
@@ -159,9 +159,14 @@ const DataMiningStudyGuide = () => {
       ordering: "Increasing support avoids testing both t(Xᵢ) ⊂ t(Xⱼ) and t(Xⱼ) ⊂ t(Xᵢ)",
       exercises: [
         {
-          title: "Test Closed Itemset",
-          description: "Given: T1:{A,B,C}, T2:{A,B,C}, T3:{A,B}. Is {A,B} closed with min_sup=60%?",
-          solution: "Support of {A,B}=100%. Closure: c({A,B})={A,B,C}? No, because T3 doesn't have C. So c({A,B})={A,B}. YES, it's closed."
+          title: "Identify Closed Itemsets",
+          description: "Transactions: T1:{A,B,C}, T2:{A,B,C}, T3:{A,B}, T4:{A,D}. min_sup=50%. Find closed itemsets.",
+          solution: "STEP 1: Find all frequent itemsets (min_sup = 2 transactions):\nF₁: {A}:4, {B}:3, {C}:2, {D}:1 ✗\nF₂: {A,B}:3, {A,C}:2, {B,C}:2, {A,D}:1 ✗\nF₃: {A,B,C}:2\n\nSTEP 2: Check if each frequent itemset is closed:\n\n{A}: closure c({A}) = items in all transactions where A appears\nA appears in T1,T2,T3,T4. Common items: {A} only\nc({A}) = {A} → CLOSED ✓\n\n{B}: B appears in T1,T2,T3. Common items: {A,B}\nc({B}) = {A,B} ≠ {B} → NOT CLOSED ✗\n\n{C}: C appears in T1,T2. Common items: {A,B,C}\nc({C}) = {A,B,C} ≠ {C} → NOT CLOSED ✗\n\n{A,B}: AB appears in T1,T2,T3. Common items: {A,B}\nc({A,B}) = {A,B} → CLOSED ✓\n\n{A,C}: AC appears in T1,T2. Common items: {A,B,C}\nc({A,C}) = {A,B,C} ≠ {A,C} → NOT CLOSED ✗\n\n{B,C}: BC appears in T1,T2. Common items: {A,B,C}\nc({B,C}) = {A,B,C} ≠ {B,C} → NOT CLOSED ✗\n\n{A,B,C}: ABC appears in T1,T2. Common items: {A,B,C}\nc({A,B,C}) = {A,B,C} → CLOSED ✓\n\nSTEP 3: CLOSED ITEMSETS = {{A}, {A,B}, {A,B,C}}\nNote: These 3 itemsets represent ALL frequent itemsets perfectly!"
+        },
+        {
+          title: "CHARM Property Application",
+          description: "Compare tidsets t(A)={1,2,3,4}, t(B)={1,2,3}, t(AB)=? Which property applies?",
+          solution: "STEP 1: Recall CHARM properties:\nP1: If t(Xᵢ) = t(Xⱼ) → replace both with XᵢXⱼ\nP2: If t(Xᵢ) ⊂ t(Xⱼ) → replace Xᵢ with XᵢXⱼ\nP3: If t(Xᵢ) ⊃ t(Xⱼ) → replace Xⱼ with XᵢXⱼ\nP4: If t(Xᵢ) ≠ t(Xⱼ) (incomparable) → test both\n\nSTEP 2: Compare tidsets:\nt(A) = {1,2,3,4} (size 4)\nt(B) = {1,2,3} (size 3)\nt(A) ≠ t(B)\nt(A) ⊃ t(B) (A's tidset is SUPERSET of B's)\n\nSTEP 3: Which property?\nt(A) ⊃ t(B) → Property P3 applies!\nP3 says: Replace B with AB\nMeaning: Whenever we see {B}:3, we can combine with {A} to get {A,B}\n\nSTEP 4: Optimization benefit:\nWe don't need to explore B separately\nWe explore AB directly instead\nThis reduces the search space!\n\nSTEP 5: Compute t(A,B):\nt(A,B) = t(A) ∩ t(B) = {1,2,3,4} ∩ {1,2,3} = {1,2,3}\nNote: t(A,B) = t(B), so {A,B} has same support as {B}"
         }
       ]
     },
@@ -537,11 +542,11 @@ const DataMiningStudyGuide = () => {
                               }`}>
                                 <ArrowRight className="w-4 h-4" /> Show Solution
                               </summary>
-                              <p className={`mt-3 p-3 rounded-lg ${
+                              <div className={`mt-3 p-3 rounded-lg whitespace-pre-line font-mono text-sm leading-relaxed ${
                                 darkMode ? 'bg-slate-700 text-slate-300' : 'bg-white text-gray-700'
                               }`}>
                                 {exercise.solution}
-                              </p>
+                              </div>
                             </details>
                           </div>
                         ))}
